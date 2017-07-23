@@ -14,6 +14,9 @@ class MultiTennantGateway extends Gateway {
     cfg = cfg || {};
     cfg.name = 'MultiTennantGateway';
     super(cfg);
+    
+    this.supportedMethods = {'GET': true, 'POST': true, 'PUT': true, 'DELETE': true,
+                             'OPTIONS': true};
   }
 
   formatName(name) {
@@ -33,14 +36,16 @@ class MultiTennantGateway extends Gateway {
     return true;
   }
 
-  createContext(req, definitions, params, data) {
-    let context = super.createContext(req, definitions, params, data);
-    //context.service = {};
-    //context.service.name = this.serviceName;
-    //context.service.path = this.serviceName.split('/');
-    //context.service.version = null;
-    //context.service.environment = 'local';
-    //context.service.identifier = `${context.service.path.join('.')}[@${context.service.version || context.service.environment}]`;
+  createContext(req, definition, params, data) {
+    let context = super.createContext(req, definition, params, data);
+    context.service = {};
+    context.service.name = definition.mt.ns + "/" + definition.mt.service;
+    context.service.path = (definition.mt.ns + "/" + definition.mt.service).split('/');
+    context.service.version = definition.mt.version;
+    //context.service.environment = 'local'; TODO
+    context.service.identifier = `${context.service.path.join('.')}[@${context.service.version || context.service.environment}]`;
+    context.http.method = definition.mt.method;
+    context.http.body = definition.mt.body;
     return context;
   }
 
@@ -49,15 +54,22 @@ class MultiTennantGateway extends Gateway {
     
     let urlinfo = url.parse(req.url, true);
     let pathname = urlinfo.pathname;
-    let segments = pathname.match(/^\/(.*[^\/])\/?$/)[1].split("/");
-    console.log(segments)
-    if(segments.length < 2){
-      return callback({statusCode: 404})
+    let segments;
+    if(req.headers.host == config.domains.main){
+      segments = pathname.match(/^\/(.*[^\/])\/?$/)[1].split("/");
+      if(segments.length < 2){
+        return callback({statusCode: 404})
+      }
+    }else if(req.headers.host.match(new RegExp("^(.*)\\." + config.domains.ns_parent.replace(".", "\\.") + "$"))){
+      let match = req.headers.host.match(new RegExp("^(.*)\\." + config.domains.ns_parent.replace(".", "\\.") + "$"));
+      segments = [match[1], pathname.match(/^\/(.*[^\/])\/?$/)[1].split("/")[0]];
     }
-    
     
     let ns = segments[0];
     let match = segments[1].match(/^([A-Za-z][A-Za-z0-9_]*)@([0-9]|[0-9][0-9]|[0-9][0-9\.]+[0-9])$/);
+    if(match == null){
+      return callback({statusCode: 404})
+    }
     let service = match[1];
     let version = match[2];
     
@@ -77,7 +89,14 @@ class MultiTennantGateway extends Gateway {
         return callback(e);
       }
       
-      definition.mtroot = config.data_location + "/" + ns + "/" + service + "/" + version + "/data/"
+      definition.mtroot = config.data_location + "/" + ns + "/" + service + "/" + version + "/data/";
+      definition.mt = {
+        ns,
+        service,
+        version,
+        method: req.method,
+        body: buffer
+      };
       
       return callback(null, definition, {}, buffer);
     }

@@ -10,5 +10,9 @@
     "name": "faas",
     "region": "us-east-1"
   },
-  "data_location": "/tmp/faas"
+  "data_location": "/tmp/faas/",
+  "domains": {
+    "main": "c9--workspace.wensley.eu",
+    "ns_parent": ""
+  }
 }
