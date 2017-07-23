@@ -1,0 +1,27 @@
+{
+  "name": "faas-registry",
+  "version": "1.0.0",
+  "description": "Local registry for microservices based on stdlib",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/techninja1008/faas-registry.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/techninja1008/faas-registry/issues"
+  },
+  "homepage": "https://github.com/techninja1008/faas-registry#readme",
+  "dependencies": {
+    "faaslang": "^0.1.1",
+    "minio": "^3.1.3",
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.6.1",
+    "targz": "^1.0.1"
+  }
+}
