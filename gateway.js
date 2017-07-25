@@ -56,7 +56,11 @@ class MultiTennantGateway extends Gateway {
     let pathname = urlinfo.pathname;
     let segments;
     if(req.headers.host == config.domains.main){
-      segments = pathname.match(/^\/(.*[^\/])\/?$/)[1].split("/");
+      let match = pathname.match(/^\/(.*[^\/])\/?$/);
+      if(match == null){
+        return callback({statusCode: 404})
+      }
+      segments = match[1].split("/");
       if(segments.length < 2){
         return callback({statusCode: 404})
       }
@@ -66,6 +70,8 @@ class MultiTennantGateway extends Gateway {
         return callback({statusCode: 404})
       }
       segments = [match[1], pathname.match(/^\/(.*[^\/])\/?$/)[1].split("/")[0]];
+    }else{
+      return callback({statusCode: 404})
     }
     
     let ns = segments[0];
