@@ -13,7 +13,7 @@ function createIfNotExists(client, bucket){
     client.bucketExists(bucket, function(err) {
       if (err) {
         if (err.code == 'NoSuchBucket') {
-          minioClient.makeBucket(bucket, config.bucket.region, function(errt) {
+          client.makeBucket(bucket, config.bucket.region, function(errt) {
             if (errt) return reject(errt)
             resolve(1)
           })

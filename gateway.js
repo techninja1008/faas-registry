@@ -62,11 +62,14 @@ class MultiTennantGateway extends Gateway {
       }
     }else if(req.headers.host.match(new RegExp("^(.*)\\." + config.domains.ns_parent.replace(".", "\\.") + "$"))){
       let match = req.headers.host.match(new RegExp("^(.*)\\." + config.domains.ns_parent.replace(".", "\\.") + "$"));
+      if(match == null){
+        return callback({statusCode: 404})
+      }
       segments = [match[1], pathname.match(/^\/(.*[^\/])\/?$/)[1].split("/")[0]];
     }
     
     let ns = segments[0];
-    let match = segments[1].match(/^([A-Za-z][A-Za-z0-9_]*)@([0-9]|[0-9][0-9]|[0-9][0-9\.]+[0-9])$/);
+    let match = segments[1].match(/^([A-Za-z][A-Za-z0-9_\\-]*)@([A-Za-z0-9][A-Za-z0-9_\\-\\.]*)$/);
     if(match == null){
       return callback({statusCode: 404})
     }
@@ -103,6 +106,7 @@ class MultiTennantGateway extends Gateway {
     
     MC.statObject(config.bucket.name, ns + "/" + service + "/" + version + ".tgz", function(err, stat) {
       if (err) {
+        console.log("stat failed")
         return callback(err);
       }
       let dateModified = Date.parse(stat.lastModified);
@@ -117,6 +121,7 @@ class MultiTennantGateway extends Gateway {
         
         MC.fGetObject(config.bucket.name, ns + "/" + service + "/" + version + ".tgz", config.data_location + "/" + ns + "/" + service + "/" + version + "/bundle.tgz", function(errt) {
           if (errt) {
+            console.log("Get Object failed")
             return callback(errt);
           }
           targz.decompress({
@@ -124,6 +129,8 @@ class MultiTennantGateway extends Gateway {
             dest: config.data_location + "/" + ns + "/" + service + "/" + version + "/data/"
           }, function(errtt){
             if(errtt) {
+              console.log("Extract failed")
+              rimraf.sync(config.data_location + "/" + ns + "/" + service + "/" + version + "/")
               return callback(errtt);
             } else {
               parseDefinitions();
